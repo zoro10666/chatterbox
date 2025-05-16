@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Chat with {{ friend }}{% endblock %}
+
+{% block content %}
+<h2>Chat with {{ friend }}</h2>
+<div id="chat-box" style="border:1px solid #ccc; padding:10px; height:300px; overflow-y:scroll;"></div>
+
+<form id="chat-form">
+    <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off" required>
+    <button type="submit">Send</button>
+</form>
+
+<script>
+    const socket = io();
+    const room = "{{ room }}";
+    const username = "{{ session['username'] }}";
+    const friend = "{{ friend }}";
+
+    socket.emit('join_room', { room });
+
+    document.getElementById('chat-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const input = document.getElementById('message-input');
+        const msg = input.value;
+        if (msg.trim() !== "") {
+            socket.emit('send_message', { msg, username, room });
+            addMessage(username, msg);
+            input.value = '';
+        }
+    });
+
+    socket.on('receive_message', function(data) {
+        addMessage(data.username, data.msg);
+    });
+
+    function addMessage(user, msg) {
+        const chatBox = document.getElementById('chat-box');
+        const messageEl = document.createElement('p');
+        messageEl.innerHTML = `<strong>${user}:</strong> ${msg}`;
+        chatBox.appendChild(messageEl);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+</script>
+{% endblock %}
